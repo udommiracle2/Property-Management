@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const maintenanceSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     title: { type: String, required: true },
     unitId: { type: String, default: "", index: true },
     tenantId: { type: String, default: "", index: true },

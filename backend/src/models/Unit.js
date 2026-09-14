@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const unitSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     propertyId: { type: String, required: true, index: true },
     label: { type: String, required: true },
     bedrooms: { type: Number, default: 0 },

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const documentSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     name: { type: String, required: true },
     kind: { type: String, default: "" },
     entityType: { type: String, default: "" }, // property | unit | tenant | lease | ...

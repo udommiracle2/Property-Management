@@ -15,7 +15,7 @@ router.post("/", crud.create);
 router.patch("/:id/read", async (req, res) => {
   try {
     const doc = await Notification.findOneAndUpdate(
-      { id: req.params.id },
+      { id: req.params.id, adminId: req.user.id },
       { $set: { read: true } },
       { new: true }
     );
@@ -28,7 +28,7 @@ router.patch("/:id/read", async (req, res) => {
 
 router.patch("/read-all", async (req, res) => {
   try {
-    await Notification.updateMany({}, { $set: { read: true } });
+    await Notification.updateMany({ adminId: req.user.id }, { $set: { read: true } });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -37,7 +37,7 @@ router.patch("/read-all", async (req, res) => {
 
 router.delete("/", async (req, res) => {
   try {
-    await Notification.deleteMany({});
+    await Notification.deleteMany({ adminId: req.user.id });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

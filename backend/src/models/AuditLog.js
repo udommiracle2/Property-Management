@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const auditLogSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     actor: { type: String, default: "" },
     action: { type: String, default: "" },
     entityType: { type: String, default: "" },

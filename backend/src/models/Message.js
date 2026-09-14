@@ -12,6 +12,7 @@ const threadItemSchema = new mongoose.Schema(
 const messageSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     from: { type: String, default: "" },
     subject: { type: String, default: "" },
     preview: { type: String, default: "" },

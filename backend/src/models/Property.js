@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const propertySchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     name: { type: String, required: true, trim: true },
     address: { type: String, default: "" },
     type: { type: String, default: "" }, // e.g. Apartment, House, Commercial

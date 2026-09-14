@@ -1,6 +1,7 @@
 /**
  * Bulk store endpoint – mirrors the frontend eh_store_v3 shape.
- * Useful for import/export and for a single-shot sync from the SPA.
+ * Every read is scoped to req.user.id (the admin's MongoDB _id) so
+ * one landlord never sees another's data.
  */
 import { Router } from "express";
 import Property from "../models/Property.js";
@@ -24,30 +25,31 @@ import { toClientList } from "../utils/crudFactory.js";
 const router = Router();
 
 const collections = {
-  properties: Property,
-  units: Unit,
-  tenants: Tenant,
-  leases: Lease,
-  invoices: Invoice,
-  expenses: Expense,
-  maintenance: Maintenance,
-  messages: Message,
+  properties:    Property,
+  units:         Unit,
+  tenants:       Tenant,
+  leases:        Lease,
+  invoices:      Invoice,
+  expenses:      Expense,
+  maintenance:   Maintenance,
+  messages:      Message,
   announcements: Announcement,
-  owners: Owner,
-  vendors: Vendor,
-  documents: Document,
-  payments: Payment,
+  owners:        Owner,
+  vendors:       Vendor,
+  documents:     Document,
+  payments:      Payment,
   notifications: Notification,
-  auditLog: AuditLog,
+  auditLog:      AuditLog,
 };
 
-/** GET /api/store – full dump (admin only) */
+/** GET /api/store – full dump scoped to the logged-in admin */
 router.get("/", authRequired, adminOnly, async (req, res) => {
   try {
+    const adminId = req.user.id;
     const result = {};
     await Promise.all(
       Object.entries(collections).map(async ([key, Model]) => {
-        const docs = await Model.find({}).lean();
+        const docs = await Model.find({ adminId }).lean();
         result[key] = toClientList(docs);
       })
     );
@@ -57,16 +59,19 @@ router.get("/", authRequired, adminOnly, async (req, res) => {
   }
 });
 
-/** PUT /api/store – replace entire store (import). Destructive. */
+/** PUT /api/store – replace this admin's entire store (import). Destructive. */
 router.put("/", authRequired, adminOnly, async (req, res) => {
   try {
+    const adminId = req.user.id;
     const body = req.body || {};
     await Promise.all(
       Object.entries(collections).map(async ([key, Model]) => {
         if (!Array.isArray(body[key])) return;
-        await Model.deleteMany({});
+        // Only wipe + replace this admin's documents
+        await Model.deleteMany({ adminId });
         if (body[key].length) {
-          await Model.insertMany(body[key], { ordered: false });
+          const stamped = body[key].map(doc => ({ ...doc, adminId }));
+          await Model.insertMany(stamped, { ordered: false });
         }
       })
     );
@@ -76,10 +81,13 @@ router.put("/", authRequired, adminOnly, async (req, res) => {
   }
 });
 
-/** DELETE /api/store – reset everything */
+/** DELETE /api/store – reset only this admin's data, never another admin's */
 router.delete("/", authRequired, adminOnly, async (req, res) => {
   try {
-    await Promise.all(Object.values(collections).map((Model) => Model.deleteMany({})));
+    const adminId = req.user.id;
+    await Promise.all(
+      Object.values(collections).map(Model => Model.deleteMany({ adminId }))
+    );
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const invoiceSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     tenantId: { type: String, required: true, index: true },
     amount: { type: Number, required: true },
     due: { type: String, default: "" },

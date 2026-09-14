@@ -20,6 +20,7 @@ const recurringSchema = new mongoose.Schema(
 const leaseSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     tenantId: { type: String, required: true, index: true },
     unitId: { type: String, required: true, index: true },
     start: { type: String, default: "" },

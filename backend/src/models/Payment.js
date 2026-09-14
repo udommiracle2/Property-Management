@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const paymentSchema = new mongoose.Schema(
   {
     id: { type: String, required: true, unique: true },
+    adminId: { type: String, required: true, index: true },
     invoiceId: { type: String, required: true, index: true },
     amount: { type: Number, required: true },
     method: { type: String, default: "" },

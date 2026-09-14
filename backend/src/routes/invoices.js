@@ -6,7 +6,10 @@ import { createCrudHandlers, toClient } from "../utils/crudFactory.js";
 import { makeId, todayISO } from "../utils/ids.js";
 
 const router = Router();
-const crud = createCrudHandlers(Invoice, { required: ["id", "tenantId", "amount"] });
+const crud = createCrudHandlers(Invoice, {
+  tenantFilter: (u) => ({ tenantId: u.tenantId }),
+  required: ["id", "tenantId", "amount"],
+});
 
 router.use(authRequired);
 
@@ -15,10 +18,12 @@ router.get("/", async (req, res) => {
     let filter = {};
     if (req.user.role === "tenant") {
       filter.tenantId = req.user.tenantId;
-    } else if (req.query.tenantId) {
-      filter.tenantId = req.query.tenantId;
+    } else {
+      // Admin: only their own invoices
+      filter.adminId = req.user.id;
+      if (req.query.tenantId) filter.tenantId = req.query.tenantId;
+      if (req.query.status)   filter.status   = req.query.status;
     }
-    if (req.query.status) filter.status = req.query.status;
     const docs = await Invoice.find(filter).sort({ createdAt: -1 }).lean();
     res.json(docs.map(toClient));
   } catch (err) {
@@ -31,6 +36,9 @@ router.get("/:id", async (req, res) => {
     const doc = await Invoice.findOne({ id: req.params.id }).lean();
     if (!doc) return res.status(404).json({ error: "Not found" });
     if (req.user.role === "tenant" && doc.tenantId !== req.user.tenantId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (req.user.role === "admin" && doc.adminId !== req.user.id) {
       return res.status(403).json({ error: "Forbidden" });
     }
     res.json(toClient(doc));
@@ -47,7 +55,7 @@ router.delete("/:id", adminOnly, crud.remove);
 router.post("/:id/pay", adminOnly, async (req, res) => {
   try {
     const { method = "", note = "" } = req.body;
-    const invoice = await Invoice.findOne({ id: req.params.id });
+    const invoice = await Invoice.findOne({ id: req.params.id, adminId: req.user.id });
     if (!invoice) return res.status(404).json({ error: "Invoice not found" });
 
     const amount = invoice.total || invoice.amount || 0;
@@ -58,6 +66,7 @@ router.post("/:id/pay", adminOnly, async (req, res) => {
 
     const payment = await Payment.create({
       id: makeId("PAY"),
+      adminId: req.user.id,
       invoiceId: invoice.id,
       amount,
       method,
@@ -76,7 +85,7 @@ router.post("/:id/pay", adminOnly, async (req, res) => {
 router.post("/:id/late-fee", adminOnly, async (req, res) => {
   try {
     const fee = Number(req.body.fee) || 0;
-    const invoice = await Invoice.findOne({ id: req.params.id });
+    const invoice = await Invoice.findOne({ id: req.params.id, adminId: req.user.id });
     if (!invoice) return res.status(404).json({ error: "Invoice not found" });
     invoice.lateFee = fee;
     invoice.total = (invoice.amount || 0) + fee;
