@@ -67,7 +67,7 @@ router.post("/", async (req, res) => {
     }
     if (!payload.created) payload.created = todayISO();
     if (!payload.updated) payload.updated = todayISO();
-    const existing = await Maintenance.findOne({ id: payload.id });
+    const existing = await Maintenance.findOne({ id: payload.id, adminId: payload.adminId });
     if (existing) return res.status(409).json({ error: "ID already exists" });
     const doc = await Maintenance.create(payload);
     res.status(201).json(toClient(doc));

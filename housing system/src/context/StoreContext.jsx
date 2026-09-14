@@ -346,11 +346,13 @@ export function StoreProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, storeReady]);
 
-  // ID helpers
-  const nextId = useCallback((prefix, list) => {
-    const nums = (list || []).map(x => parseInt(String(x.id).split("-").pop(), 10)).filter(Number.isFinite);
-    const n = (nums.length ? Math.max(...nums) : 0) + 1;
-    return `${prefix}-${String(n).padStart(4, "0")}`;
+  // ID generator — uses timestamp + random suffix so IDs are globally unique
+  // across all admin accounts. Sequential IDs like PROP-0001 would collide
+  // when two different landlords both create their first property.
+  const nextId = useCallback((prefix) => {
+    const ts   = Date.now().toString(36).toUpperCase();
+    const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+    return `${prefix}-${ts}${rand}`;
   }, []);
 
   // Wrapped dispatch: applies the change locally right away (so the UI
@@ -391,8 +393,13 @@ export function StoreProvider({ children }) {
       })
       .catch((err) => {
         console.error(`Failed to save "${action.type}" to the server:`, err);
-        setSyncError(err.message || "A change could not be saved to the server. Refreshing your data…");
-        hydrate();
+        setSyncError(err.message || "A change could not be saved to the server.");
+        // Only resync from the server for genuine failures (network error,
+        // 5xx). A 409 conflict means the server rejected our data — resyncing
+        // would just wipe out what the user typed with no benefit.
+        if (err.status !== 409) {
+          hydrate();
+        }
       });
   }, [hydrate]);
 

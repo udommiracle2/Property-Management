@@ -57,7 +57,7 @@ router.post("/", async (req, res) => {
     } else {
       payload.adminId = req.user.id;
     }
-    const existing = await Message.findOne({ id: payload.id });
+    const existing = await Message.findOne({ id: payload.id, adminId: payload.adminId });
     if (existing) return res.status(409).json({ error: "ID already exists" });
     const doc = await Message.create(payload);
     res.status(201).json(toClient(doc));
