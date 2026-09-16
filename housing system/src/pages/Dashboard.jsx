@@ -132,18 +132,18 @@ export default function Dashboard() {
           </div>
           {/* Secondary KPIs - Stacked */}
           <div className="grid grid-cols-1 gap-6">
-            <div className="card p-6 flex items-center justify-between">
-              <div className="space-y-1 bg-[#8BAAAD]">
-                <div className="text-xs uppercase tracking-widest text-stone-500">Occupancy</div>
+            <div className="card p-6 flex items-center justify-between bg-[#8BAAAD]">
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-widest text-[#F4FFF8]">Occupancy</div>
                 <div className="text-3xl font-bold text-[#1C3738] dark:text-stone-100">{s.occupancy}%</div>
               </div>
               <div className="h-12 w-12 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 grid place-items-center">
                 <Building2 size={24} />
               </div>
             </div>
-            <div className="card p-6 flex items-center justify-between">
-              <div className="space-y-1 bg-[#8BAAAD]">
-                <div className="text-xs uppercase tracking-widest text-stone-500">Active Tenants</div>
+            <div className="card p-6 flex items-center justify-between bg-[#8BAAAD]">
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-widest text-[#F4FFF8]">Active Tenants</div>
                 <div className="text-3xl font-bold text-[#1C3738] dark:text-stone-100">{fmtNum(state.tenants.filter((t) => t.status === "Active").length)}</div>
               </div>
               <div className="h-12 w-12 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 grid place-items-center">
