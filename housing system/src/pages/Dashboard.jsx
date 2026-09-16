@@ -133,7 +133,7 @@ export default function Dashboard() {
           {/* Secondary KPIs - Stacked */}
           <div className="grid grid-cols-1 gap-6">
             <div className="card p-6 flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-1 bg-[#8BAAAD]">
                 <div className="text-xs uppercase tracking-widest text-stone-500">Occupancy</div>
                 <div className="text-3xl font-bold text-[#1C3738] dark:text-stone-100">{s.occupancy}%</div>
               </div>
@@ -142,7 +142,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="card p-6 flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-1 bg-[#8BAAAD]">
                 <div className="text-xs uppercase tracking-widest text-stone-500">Active Tenants</div>
                 <div className="text-3xl font-bold text-[#1C3738] dark:text-stone-100">{fmtNum(state.tenants.filter((t) => t.status === "Active").length)}</div>
               </div>
@@ -286,7 +286,7 @@ export default function Dashboard() {
           <div className="card p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-[#1C3738] dark:text-stone-100">Occupancy Trend</h2>
-              <div className="px-2 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-[10px] font-bold uppercase tracking-widest text-stone-500">Live Data</div>
+              <div className="px-2 py-1 rounded-full bg-[#F4FFF8] dark:bg-[1C3738] text-[10px] font-bold uppercase tracking-widest text-stone-500">Live Data</div>
             </div>
             <div className="h-64">
               {s.totalUnits > 0 ? (
