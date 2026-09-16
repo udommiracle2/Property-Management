@@ -90,7 +90,7 @@ export default function App() {
       <Route path="/maintenance" element={<RequireAdmin><ProtectedLayout><Maintenance /></ProtectedLayout></RequireAdmin>} />
       <Route path="/messages" element={<RequireAdmin><ProtectedLayout><Messages /></ProtectedLayout></RequireAdmin>} />
       <Route path="/owners" element={<RequireAdmin><ProtectedLayout><Owners /></ProtectedLayout></RequireAdmin>} />
-      <Route path="/vendors" element={<RequireAdmin><ProtectedLayout><Vendors /></ProtectedLayout></RequireAdmin>} />
+      {/* <Route path="/vendors" element={<RequireAdmin><ProtectedLayout><Vendors /></ProtectedLayout></RequireAdmin>} /> */}
 
       {/* Tenant routes */}
       <Route path="/tenant" element={<RequireTenant><TenantLayout><TenantPortal /></TenantLayout></RequireTenant>} />
