@@ -74,10 +74,10 @@ export default function Dashboard() {
       <main className="p-6 space-y-8">
         {/* Getting started */}
         {!hasData && (
-          <section className="card p-8 border-stone-200 dark:border-stone-800 bg-gradient-to-br from-stone-100 to-white dark:from-stone-900/40 dark:to-stone-950">
+          <section className="card p-8 border-stone-200 dark:border-stone-800 bg-gradient-to-br from-[F4FFF8] to-white dark:from-[#1C3738]/40 dark:to-[#1C3738]">
             <div className="flex flex-col md:flex-row md:items-start gap-8">
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-stone-900 dark:text-white mb-2">Get started with EstateHub</h2>
+                <h2 className="text-xl font-bold text-[#1C3738] dark:text-white mb-2">Get started with EstateHub</h2>
                 <p className="text-sm text-stone-600 dark:text-stone-400 max-w-xl leading-relaxed">
                   Follow these steps to set up your portfolio. Each step unlocks the next part of the system —
                   properties feed units, units feed tenants, and tenants unlock leases and rent collection.
@@ -120,7 +120,7 @@ export default function Dashboard() {
         {/* High-End KPI Layout - Asymmetric */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main KPI - Large */}
-          <div className="card p-6 md:col-span-2 flex items-center justify-between bg-stone-900 text-white dark:bg-stone-800">
+          <div className="card p-6 md:col-span-2 flex items-center justify-between bg-[#1C3738] text-white dark:bg-stone-800">
             <div className="space-y-1">
               <div className="text-xs uppercase tracking-widest opacity-60">Monthly Revenue</div>
               <div className="text-5xl font-light tracking-tighter">{fmt(s.monthly)}</div>
@@ -135,7 +135,7 @@ export default function Dashboard() {
             <div className="card p-6 flex items-center justify-between">
               <div className="space-y-1">
                 <div className="text-xs uppercase tracking-widest text-stone-500">Occupancy</div>
-                <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{s.occupancy}%</div>
+                <div className="text-3xl font-bold text-[#1C3738] dark:text-stone-100">{s.occupancy}%</div>
               </div>
               <div className="h-12 w-12 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 grid place-items-center">
                 <Building2 size={24} />
@@ -144,7 +144,7 @@ export default function Dashboard() {
             <div className="card p-6 flex items-center justify-between">
               <div className="space-y-1">
                 <div className="text-xs uppercase tracking-widest text-stone-500">Active Tenants</div>
-                <div className="text-3xl font-bold text-stone-900 dark:text-stone-100">{fmtNum(state.tenants.filter((t) => t.status === "Active").length)}</div>
+                <div className="text-3xl font-bold text-[#1C3738] dark:text-stone-100">{fmtNum(state.tenants.filter((t) => t.status === "Active").length)}</div>
               </div>
               <div className="h-12 w-12 rounded-2xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 grid place-items-center">
                 <Users size={24} />
@@ -155,14 +155,14 @@ export default function Dashboard() {
 
         {/* Attention Section - Integrated Alert Bar */}
         {(overdueInvoices.length > 0 || openMaint.length > 0 || expiringLeases.length > 0 || pendingInvoices.length > 0) && (
-          <section className="bg-stone-100 dark:bg-stone-900/50 rounded-3xl p-6 border border-stone-200 dark:border-stone-800">
+          <section className="bg-stone-100 dark:bg-[#1C3738]/50 rounded-3xl p-6 border border-stone-200 dark:border-stone-800">
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle size={18} className="text-amber-500" />
-              <h2 className="text-sm font-bold uppercase tracking-widest text-stone-900 dark:text-stone-100">Attention Required</h2>
+              <h2 className="text-sm font-bold uppercase tracking-widest text-[#1C3738] dark:text-stone-100">Attention Required</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               {overdueInvoices.length > 0 && (
-                <Link to="/rent" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-rose-500 bg-white dark:bg-stone-900">
+                <Link to="/rent" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-rose-500 bg-white dark:bg-[#1C3738]">
                   <div className="h-8 w-8 rounded-lg bg-rose-100 dark:bg-rose-900/30 text-rose-600 grid place-items-center shrink-0">
                     <Receipt size={16} />
                   </div>
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 </Link>
               )}
               {pendingInvoices.length > 0 && (
-                <Link to="/rent" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-amber-500 bg-white dark:bg-stone-900">
+                <Link to="/rent" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-amber-500 bg-white dark:bg-[#1C3738]">
                   <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 grid place-items-center shrink-0">
                     <Receipt size={16} />
                   </div>
@@ -184,7 +184,7 @@ export default function Dashboard() {
                 </Link>
               )}
               {openMaint.length > 0 && (
-                <Link to="/maintenance" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-orange-500 bg-white dark:bg-stone-900">
+                <Link to="/maintenance" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-orange-500 bg-white dark:bg-[#1C3738]">
                   <div className="h-8 w-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 grid place-items-center shrink-0">
                     <Wrench size={16} />
                   </div>
@@ -195,7 +195,7 @@ export default function Dashboard() {
                 </Link>
               )}
               {expiringLeases.length > 0 && (
-                <Link to="/leases" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-stone-500 bg-white dark:bg-stone-900">
+                <Link to="/leases" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-stone-500 bg-white dark:bg-[#1C3738]">
                   <div className="h-8 w-8 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-600 grid place-items-center shrink-0">
                     <FileText size={16} />
                   </div>
@@ -214,7 +214,7 @@ export default function Dashboard() {
           <div className="card p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
               <div className="space-y-1">
-                <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">Financial Performance</h2>
+                <h2 className="text-lg font-bold text-[#1C3738] dark:text-stone-100">Financial Performance</h2>
                 <p className="text-xs text-stone-500 font-light">Revenue vs Expenses over time</p>
               </div>
               <button className="btn-ghost text-xs"><ArrowUpRight size={14} /> Export Report</button>
@@ -249,7 +249,7 @@ export default function Dashboard() {
 
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">Property Mix</h2>
+              <h2 className="text-lg font-bold text-[#1C3738] dark:text-stone-100">Property Mix</h2>
               <Building2 size={20} className="text-stone-400" />
             </div>
             <div className="h-64">
@@ -285,7 +285,7 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="card p-6 lg:col-span-2">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">Occupancy Trend</h2>
+              <h2 className="text-lg font-bold text-[#1C3738] dark:text-stone-100">Occupancy Trend</h2>
               <div className="px-2 py-1 rounded-full bg-stone-100 dark:bg-stone-800 text-[10px] font-bold uppercase tracking-widest text-stone-500">Live Data</div>
             </div>
             <div className="h-64">
@@ -307,8 +307,8 @@ export default function Dashboard() {
 
           <div className="card p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">Open Maintenance</h2>
-              <Link to="/maintenance" className="text-xs font-bold text-stone-600 hover:text-stone-900 transition">View all →</Link>
+              <h2 className="text-lg font-bold text-[#1C3738] dark:text-stone-100">Open Maintenance</h2>
+              <Link to="/maintenance" className="text-xs font-bold text-stone-600 hover:text-[#1C3738] transition">View all →</Link>
             </div>
             <ul className="space-y-4">
               {openMaint.slice(0, 5).map((m) => {
