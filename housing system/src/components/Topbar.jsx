@@ -20,7 +20,7 @@ export default function Topbar({ title, subtitle, action }) {
       </button>
 
       <div className="flex-1 min-w-0">
-        <h1 className="text-base md:text-lg font-semibold text-stone-900 dark:text-stone-100 truncate">{title}</h1>
+        <h1 className="text-base md:text-lg font-semibold text-[#1C3738] dark:text-stone-100 truncate">{title}</h1>
         {subtitle && <p className="text-xs text-stone-500 truncate">{subtitle}</p>}
       </div>
 
@@ -41,7 +41,7 @@ export default function Topbar({ title, subtitle, action }) {
         <select
           value={currency}
           onChange={(e) => setCurrency(e.target.value)}
-          className="appearance-none h-10 pl-3 pr-8 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-900 text-sm font-semibold hover:bg-stone-50 dark:hover:bg-stone-800"
+          className="appearance-none h-10 pl-3 pr-8 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-[#1C3738] text-sm font-semibold hover:bg-stone-50 dark:hover:bg-stone-800"
           title="Display currency"
         >
           {Object.values(currencies).map((c) => (
@@ -62,7 +62,7 @@ export default function Topbar({ title, subtitle, action }) {
           {initials(user?.name)}
         </div>
         <div className="hidden md:block leading-tight min-w-0">
-          <div className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate max-w-[120px]">{user?.name || "Admin"}</div>
+          <div className="text-sm font-semibold text-[#1C3738] dark:text-stone-100 truncate max-w-[120px]">{user?.name || "Admin"}</div>
           <div className="text-xs text-stone-500">{user?.role === "tenant" ? "Tenant" : "Admin"}</div>
         </div>
       </div>
