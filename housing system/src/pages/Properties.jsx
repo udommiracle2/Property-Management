@@ -85,7 +85,7 @@ function PropertyForm({ initial, owners, onSubmit, onCancel }) {
           <select className="input" value={form.type} onChange={set("type")}>{TYPES.map(t => <option key={t}>{t}</option>)}</select>
         </div>
         <div>
-          <label className="label">Monthly revenue (USD)</label>
+          <label className="label">Monthly revenue</label>
           <input className="input" type="number" min="0" value={form.monthlyRevenue} onChange={set("monthlyRevenue")} />
         </div>
         <div>
@@ -308,7 +308,7 @@ export default function Properties() {
                     ) : (
                       <>
                         <div className="absolute inset-0 bg-gradient-to-br from-stone-600 to-stone-800" />
-                        <div className="absolute inset-0 opacity-20" style={{backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)", backgroundSize: "20px 20px"}} />
+                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px), radial-gradient(circle at 70% 60%, white 1px, transparent 1px)", backgroundSize: "20px 20px" }} />
                       </>
                     )}
                     <Pill className="absolute top-3 left-3 bg-white/90 text-stone-700 font-semibold backdrop-blur-sm">{p.type}</Pill>
