@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import {
   Mail, Lock, User, Eye, EyeOff, ArrowRight, Home,
-  DoorOpen, MessageSquare, Receipt, ShieldCheck
+  DoorOpen, MessageSquare, Receipt, ShieldCheck, Check, X
 } from "lucide-react";
 
 const PERKS = [
@@ -22,8 +22,25 @@ export default function TenantRegister() {
   const { tenantRegister } = useAuth();
   const navigate = useNavigate();
 
+  // Password validation rules
+  const passwordRules = [
+    { label: "At least 8 characters", valid: password.length >= 8 },
+    { label: "One uppercase letter (A-Z)", valid: /[A-Z]/.test(password) },
+    { label: "One lowercase letter (a-z)", valid: /[a-z]/.test(password) },
+    { label: "One number (0-9)", valid: /[0-9]/.test(password) },
+    { label: "One special character (!@#$%...)", valid: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+  ];
+
+  const isPasswordValid = passwordRules.every((rule) => rule.valid);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isPasswordValid) {
+      setError("Please satisfy all password requirements before activating.");
+      return;
+    }
+
     setError("");
     setLoading(true);
     try {
@@ -136,10 +153,9 @@ export default function TenantRegister() {
                 <input
                   type={show ? "text" : "password"}
                   required
-                  minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="Enter a strong password"
                   className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-stone-200 bg-white text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-resident-300 focus:border-resident-400 transition"
                 />
                 <button
@@ -151,12 +167,28 @@ export default function TenantRegister() {
                   {show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+
+              {/* Password Requirements List */}
+              <div className="mt-3 space-y-1.5">
+                {passwordRules.map((rule, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-xs">
+                    {rule.valid ? (
+                      <Check size={14} className="text-emerald-600 shrink-0" />
+                    ) : (
+                      <X size={14} className="text-stone-300 shrink-0" />
+                    )}
+                    <span className={rule.valid ? "text-emerald-700 font-medium" : "text-stone-400"}>
+                      {rule.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-resident-600 hover:bg-resident-700 active:bg-resident-800 text-white text-sm font-semibold py-2.5 mt-2 transition disabled:opacity-60"
+              disabled={loading || !isPasswordValid}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-resident-600 hover:bg-resident-700 active:bg-resident-800 text-white text-sm font-semibold py-2.5 mt-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Activating…" : (<>Activate account <ArrowRight size={15} /></>)}
             </button>

@@ -120,7 +120,7 @@ export default function Dashboard() {
         {/* High-End KPI Layout - Asymmetric */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Main KPI - Large */}
-          <div className="card p-6 md:col-span-2 flex items-center justify-between bg-[#1C3738] text-white dark:bg-stone-800">
+          <div className="card p-6 md:col-span-2 flex items-center justify-between bg-[#1F2041] text-white dark:bg-stone-800">
             <div className="space-y-1">
               <div className="text-xs uppercase tracking-widest opacity-60">Monthly Revenue</div>
               <div className="text-5xl font-light tracking-tighter">{fmt(s.monthly)}</div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
           </div>
           {/* Secondary KPIs - Stacked */}
           <div className="grid grid-cols-1 gap-6">
-            <div className="card p-6 flex items-center justify-between bg-[#8BAAAD]">
+            <div className="card p-6 flex items-center justify-between bg-[#2c2d4d]">
               <div className="space-y-1">
                 <div className="text-xs uppercase tracking-widest text-[#1C3738]">Occupancy</div>
                 <div className="text-3xl font-bold text-[#1C3738] dark:text-stone-100">{s.occupancy}%</div>
@@ -141,7 +141,7 @@ export default function Dashboard() {
                 <Building2 size={24} />
               </div>
             </div>
-            <div className="card p-6 flex items-center justify-between bg-[#8BAAAD]">
+            <div className="card p-6 flex items-center justify-between bg-[#2c2d4d]">
               <div className="space-y-1">
                 <div className="text-xs uppercase tracking-widest text-[#1C3738]">Active Tenants</div>
                 <div className="text-3xl font-bold text-[#1C3738] dark:text-stone-100">{fmtNum(state.tenants.filter((t) => t.status === "Active").length)}</div>
@@ -155,14 +155,14 @@ export default function Dashboard() {
 
         {/* Attention Section - Integrated Alert Bar */}
         {(overdueInvoices.length > 0 || openMaint.length > 0 || expiringLeases.length > 0 || pendingInvoices.length > 0) && (
-          <section className="bg-stone-100 dark:bg-[#1C3738]/50 rounded-3xl p-6 border border-stone-200 dark:border-stone-800">
+          <section className="bg-stone-100 dark:bg-[#1F2041]/50 rounded-3xl p-6 border border-stone-200 dark:border-stone-800">
             <div className="flex items-center gap-2 mb-4">
               <AlertTriangle size={18} className="text-amber-500" />
               <h2 className="text-sm font-bold uppercase tracking-widest text-[#1C3738] dark:text-stone-100">Attention Required</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               {overdueInvoices.length > 0 && (
-                <Link to="/rent" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-rose-500 bg-white dark:bg-[#1C3738]">
+                <Link to="/rent" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-rose-500 bg-white dark:bg-[#1F2041]">
                   <div className="h-8 w-8 rounded-lg bg-rose-100 dark:bg-rose-900/30 text-rose-600 grid place-items-center shrink-0">
                     <Receipt size={16} />
                   </div>
@@ -173,7 +173,7 @@ export default function Dashboard() {
                 </Link>
               )}
               {pendingInvoices.length > 0 && (
-                <Link to="/rent" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-amber-500 bg-white dark:bg-[#1C3738]">
+                <Link to="/rent" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-amber-500 bg-white dark:bg-[#1F2041]">
                   <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-600 grid place-items-center shrink-0">
                     <Receipt size={16} />
                   </div>
@@ -184,7 +184,7 @@ export default function Dashboard() {
                 </Link>
               )}
               {openMaint.length > 0 && (
-                <Link to="/maintenance" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-orange-500 bg-white dark:bg-[#1C3738]">
+                <Link to="/maintenance" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-orange-500 bg-white dark:bg-[#1F2041]">
                   <div className="h-8 w-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 grid place-items-center shrink-0">
                     <Wrench size={16} />
                   </div>
@@ -195,7 +195,7 @@ export default function Dashboard() {
                 </Link>
               )}
               {expiringLeases.length > 0 && (
-                <Link to="/leases" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-stone-500 bg-white dark:bg-[#1C3738]">
+                <Link to="/leases" className="card p-4 flex items-center gap-3 hover:translate-x-1 transition-all border-l-4 border-l-stone-500 bg-white dark:bg-[#1F2041]">
                   <div className="h-8 w-8 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-600 grid place-items-center shrink-0">
                     <FileText size={16} />
                   </div>
