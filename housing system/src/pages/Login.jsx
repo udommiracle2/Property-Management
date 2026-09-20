@@ -55,7 +55,7 @@ export default function Login() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-[48%] relative overflow-hidden text-white bg-black">
         <img
-          src="/images/luxury-architecture.jpg"
+          src="/images/pexels-ahmetcotur-27626166.jpg"
           alt="Luxury Architecture"
           className="absolute inset-0 w-full h-full object-cover opacity-80"
         />
