@@ -57,7 +57,7 @@ export default function Topbar({ title, subtitle, action }) {
 
       {action}
 
-      <div className="flex items-center gap-3 pl-2 ml-1 border-l border-stone-200 dark:border-stone-800">
+      {/* <div className="flex items-center gap-3 pl-2 ml-1 border-l border-stone-200 dark:border-stone-800">
         <div className="h-9 w-9 rounded-full bg-stone-700 border border-stone-600 grid place-items-center text-stone-200 font-bold text-sm">
           {initials(user?.name)}
         </div>
@@ -65,7 +65,7 @@ export default function Topbar({ title, subtitle, action }) {
           <div className="text-sm font-semibold text-[#1C3738] dark:text-stone-100 truncate max-w-[120px]">{user?.name || "Admin"}</div>
           <div className="text-xs text-stone-500">{user?.role === "tenant" ? "Tenant" : "Admin"}</div>
         </div>
-      </div>
+      </div> */}
     </header>
   );
 }
