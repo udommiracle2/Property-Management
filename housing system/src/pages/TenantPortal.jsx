@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import jsPDF from "jspdf";
 import {
@@ -23,7 +23,12 @@ function useResident() {
     const invoiceIds = new Set(invoices.map((i) => i.id));
     const payments = state.payments.filter((p) => invoiceIds.has(p.invoiceId));
     const tickets = state.maintenance.filter((m) => m.tenantId === tenant?.id);
-    const messages = state.messages.filter((m) => m.tenantId === tenant?.id || String(m.from || "").toLowerCase() === String(tenant?.name || "").toLowerCase());
+    // The backend already scopes GET /messages to this tenant's own
+    // conversations (see routes/messages.js), so tenantId alone is a
+    // reliable and sufficient filter here — a name-based fallback would
+    // risk pulling in another tenant's conversation if two people happen
+    // to share a display name.
+    const messages = state.messages.filter((m) => m.tenantId === tenant?.id);
     return { tenant, unit, property, lease, invoices, payments, tickets, messages };
   }, [state, user]);
 }
@@ -303,13 +308,44 @@ function Maintenance({ resident }) {
 function Messages({ resident }) {
   const { state, dispatch, nextId } = useStore();
   const [text, setText] = useState("");
+  const [sending, setSending] = useState(false);
+
+  // Treat the oldest conversation as the ongoing one to reply into. (Older
+  // builds of this page created a brand-new conversation on every send —
+  // any extras left over from that are still merged into the view below
+  // so nothing already sent gets hidden, but new replies go into this one.)
+  const conversation = useMemo(
+    () => [...resident.messages].sort((a, b) => new Date(a.time || 0) - new Date(b.time || 0))[0],
+    [resident.messages]
+  );
+
+  // Flatten every conversation's thread into one list and sort by actual
+  // send time — the previous version just followed the order the
+  // conversations happened to load in, which put newer replies above
+  // older ones whenever more than one conversation existed.
+  const timeline = useMemo(() => {
+    const entries = resident.messages.flatMap((message) =>
+      message.thread?.length ? message.thread : [{ from: message.from, role: "tenant", text: message.preview, at: message.time }]
+    );
+    return entries.sort((a, b) => new Date(a.at || 0) - new Date(b.at || 0));
+  }, [resident.messages]);
+
+  useEffect(() => { setSending(false); }, [resident.messages]);
+
   const send = (e) => {
     e.preventDefault();
-    if (!text.trim()) return;
+    const body = text.trim();
+    if (!body || sending) return;
+    setSending(true);
     const now = new Date().toISOString();
-    dispatch({ type: "ADD_MESSAGE", payload: { id: nextId("MSG", state.messages), from: resident.tenant.name, tenantId: resident.tenant.id, subject: "Message from tenant portal", preview: text.trim(), time: now, unread: true, thread: [{ from: resident.tenant.name, text: text.trim(), at: now }] } });
+    if (conversation) {
+      dispatch({ type: "SEND_REPLY", payload: { id: conversation.id, reply: { from: resident.tenant.name, role: "tenant", text: body, at: now } } });
+    } else {
+      dispatch({ type: "ADD_MESSAGE", payload: { id: nextId("MSG", state.messages), from: resident.tenant.name, tenantId: resident.tenant.id, subject: "Message from tenant portal", preview: body, time: now, unread: true, thread: [{ from: resident.tenant.name, role: "tenant", text: body, at: now }] } });
+    }
     setText("");
   };
+
   return (
     <main className="p-4 md:p-6 max-w-4xl">
       <div className="mb-6"><h2 className="text-xl font-bold">Messages</h2><p className="text-sm text-stone-500 mt-1">Contact your property manager. We’ll keep your conversation here.</p></div>
@@ -319,16 +355,23 @@ function Messages({ resident }) {
           <div><p className="font-semibold">Property management</p><p className="text-xs text-emerald-600">Typically responds within one business day</p></div>
         </div>
         <div className="p-5 space-y-3 min-h-64 bg-stone-50/60">
-          {resident.messages.length ? resident.messages.flatMap((message) => message.thread?.length ? message.thread : [{ from: message.from, text: message.preview, at: message.time }]).map((m, index) => (
-            <div key={index} className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${m.from === resident.tenant.name ? "ml-auto bg-resident-600 text-white" : "bg-white border border-stone-100 text-stone-700"}`}>
-              <p>{m.text}</p>
-              <p className={`text-[10px] mt-1 ${m.from === resident.tenant.name ? "text-resident-100" : "text-stone-400"}`}>{m.from} · {fmtDate(m.at || m.time)}</p>
-            </div>
-          )) : <div className="text-sm text-stone-500 text-center pt-20">Start a conversation with your property team.</div>}
+          {timeline.length ? timeline.map((m, index) => {
+            // The sender's role is the reliable signal — a display name
+            // can match on both sides (the same person can be both an
+            // admin and a tenant). Fall back to the name check only for
+            // older entries that predate role being stored.
+            const mine = m.role ? m.role === "tenant" : m.from === resident.tenant.name;
+            return (
+              <div key={index} className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${mine ? "ml-auto bg-resident-600 text-white" : "bg-white border border-stone-100 text-stone-700"}`}>
+                <p>{m.text}</p>
+                <p className={`text-[10px] mt-1 ${mine ? "text-resident-100" : "text-stone-400"}`}>{m.from} · {fmtDate(m.at || m.time)}</p>
+              </div>
+            );
+          }) : <div className="text-sm text-stone-500 text-center pt-20">Start a conversation with your property team.</div>}
         </div>
         <form onSubmit={send} className="p-4 flex gap-3 border-t border-stone-100">
-          <input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message…" />
-          <button className="btn-primary bg-resident-600 hover:bg-resident-700" title="Send message"><Send size={16} /></button>
+          <input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message…" disabled={sending} />
+          <button className="btn-primary bg-resident-600 hover:bg-resident-700" title="Send message" disabled={sending}><Send size={16} /></button>
         </form>
       </div>
     </main>

@@ -4,6 +4,10 @@ const threadItemSchema = new mongoose.Schema(
   {
     text: { type: String, default: "" },
     from: { type: String, default: "" },
+    // Who actually sent this — the reliable discriminator for left/right
+    // alignment in the UI. `from` is just a display name and can collide
+    // (the same person can be both an admin and a tenant).
+    role: { type: String, enum: ["admin", "tenant"], default: "admin" },
     at: { type: String, default: "" },
   },
   { _id: false }

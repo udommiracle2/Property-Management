@@ -57,6 +57,14 @@ router.post("/", async (req, res) => {
     } else {
       payload.adminId = req.user.id;
     }
+    // Stamp every thread entry with who actually sent it. Display names
+    // are shown to people but are NOT a safe way to tell sender from
+    // recipient in the UI — they can collide (the same person can now be
+    // both an admin and a tenant, see /auth/tenant-register), so each
+    // entry also carries the sender's real role.
+    if (Array.isArray(payload.thread)) {
+      payload.thread = payload.thread.map((t) => ({ ...t, role: t.role || req.user.role }));
+    }
     const existing = await Message.findOne({ id: payload.id, adminId: payload.adminId });
     if (existing) return res.status(409).json({ error: "ID already exists" });
     const doc = await Message.create(payload);
@@ -82,7 +90,7 @@ router.post("/:id/reply", async (req, res) => {
     if (req.user.role === "tenant" && msg.tenantId && msg.tenantId !== req.user.tenantId) {
       return res.status(403).json({ error: "Forbidden" });
     }
-    const reply = { text, from: from || req.user.name || req.user.email, at: todayISO() };
+    const reply = { text, from: from || req.user.name || req.user.email, role: req.user.role, at: todayISO() };
     msg.thread = msg.thread || [];
     msg.thread.push(reply);
     msg.preview = text;

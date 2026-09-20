@@ -56,7 +56,7 @@ export default function Messages() {
       type: "SEND_REPLY",
       payload: {
         id: activeId,
-        reply: { from: user?.name || user?.email || "Admin", text: draft, at: new Date().toISOString() }
+        reply: { from: user?.name || user?.email || "Admin", role: "admin", text: draft, at: new Date().toISOString() }
       }
     });
     setDraft("");
@@ -74,7 +74,7 @@ export default function Messages() {
       preview: payload.text,
       time: new Date().toISOString(),
       unread: true,
-      thread: [{ from: fromName, text: payload.text, at: new Date().toISOString() }]
+      thread: [{ from: fromName, role: "admin", text: payload.text, at: new Date().toISOString() }]
     };
     dispatch({ type: "ADD_MESSAGE", payload: msg });
     setOpen(false); setActiveId(id);
@@ -127,10 +127,14 @@ export default function Messages() {
                   </div>
                   <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-stone-50/30 dark:bg-stone-950/40">
                     {active.thread.map((msg, i) => {
-                      // A thread item is "mine" (the admin's) if its sender
-                      // name doesn't match the tenant this conversation is
-                      // with — the tenant's own messages carry their name.
-                      const isMine = msg.from !== active.from;
+                      // "Mine" (the admin's) is decided by the sender's
+                      // actual role when we have it (every message sent
+                      // since this was fixed carries one) — display names
+                      // alone aren't reliable, since the same person can
+                      // be both an admin and a tenant. Older messages
+                      // without a stored role fall back to the old
+                      // name-comparison behavior.
+                      const isMine = msg.role ? msg.role === "admin" : msg.from !== active.from;
                       return (
                         <div key={i} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[75%] rounded-3xl px-4 py-3 text-sm shadow-sm ${isMine ? "bg-stone-800 text-white rounded-br-sm" : "bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-100 rounded-bl-sm border border-stone-200 dark:border-stone-700"}`}>
