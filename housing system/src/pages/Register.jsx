@@ -1,202 +1,213 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import {
-  Mail, Lock, User, Eye, EyeOff, ArrowRight, Home,
-  DoorOpen, MessageSquare, Receipt, ShieldCheck, Check, X
-} from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, CheckCircle2, Home } from "lucide-react";
 
-const PERKS = [
-  { icon: DoorOpen, text: "See your lease and unit details in one place" },
-  { icon: MessageSquare, text: "Message your property manager directly" },
-  { icon: Receipt, text: "View and download rent receipts anytime" },
-];
-
-export default function TenantRegister() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function Register() {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { tenantRegister } = useAuth();
-  const navigate = useNavigate();
 
-  // Password validation rules
-  const passwordRules = [
-    { label: "At least 8 characters", valid: password.length >= 8 },
-    { label: "One uppercase letter (A-Z)", valid: /[A-Z]/.test(password) },
-    { label: "One lowercase letter (a-z)", valid: /[a-z]/.test(password) },
-    { label: "One number (0-9)", valid: /[0-9]/.test(password) },
-    { label: "One special character (!@#$%...)", valid: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
-  ];
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const isPasswordValid = passwordRules.every((rule) => rule.valid);
-
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-
-    if (!isPasswordValid) {
-      setError("Please satisfy all password requirements before activating.");
+    setError("");
+    if (form.password !== form.confirm) {
+      setError("Passwords do not match.");
       return;
     }
-
-    setError("");
     setLoading(true);
     try {
-      await tenantRegister(name, email, password);
-      navigate("/tenant");
+      await register(form.name, form.email, form.password);
+      navigate("/", { replace: true });
     } catch (err) {
-      setError(err.message || "Activation failed.");
+      setError(err.message || "Registration failed.");
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  const passwordHints = [
+    { ok: form.password.length >= 6, label: "At least 6 characters" },
+    { ok: form.password === form.confirm && form.confirm.length > 0, label: "Passwords match" }
+  ];
 
   return (
-    <div className="min-h-screen w-full flex bg-stone-50">
-      {/* Decorative side panel — tenant palette, hidden on small screens */}
-      <div className="hidden lg:flex lg:w-[42%] relative overflow-hidden bg-gradient-to-br from-resident-700 via-resident-600 to-tenant-yale">
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-tenant-bronze/20 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-black/20 to-transparent" />
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          <div className="flex items-center gap-2.5">
-            <div className="h-10 w-10 rounded-xl bg-white/15 backdrop-blur grid place-items-center">
-              <Home size={20} />
-            </div>
-            <span className="font-bold text-lg tracking-tight">EstateHub</span>
-          </div>
+    <div className="min-h-screen flex bg-stone-50 dark:bg-stone-950">
+      {/* Left panel */}
+      <div className="hidden lg:flex lg:w-[48%] relative overflow-hidden text-white bg-black">
+        <img
+          src="/images/luxury-architecture.jpg"
+          alt="Luxury Architecture"
+          className="absolute inset-0 w-full h-full object-cover opacity-80"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-          <div className="space-y-8">
+        <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 rounded-xl bg-white/10 border border-white/10 backdrop-blur grid place-items-center">
+              <Home size={22} />
+            </div>
             <div>
-              <p className="text-xs uppercase tracking-widest text-white/60 font-semibold mb-2">Resident portal</p>
-              <h1 className="text-3xl font-bold leading-tight">
-                Everything about<br />your home, in one place.
-              </h1>
+              <div className="font-bold text-lg leading-tight">EstateHub</div>
+              <div className="text-xs text-white/50">Property Management</div>
             </div>
-            <ul className="space-y-4">
-              {PERKS.map(({ icon: Icon, text }) => (
-                <li key={text} className="flex items-center gap-3 text-sm text-white/85">
-                  <span className="h-8 w-8 rounded-lg bg-white/15 backdrop-blur grid place-items-center shrink-0">
-                    <Icon size={15} />
-                  </span>
-                  {text}
-                </li>
-              ))}
-            </ul>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-white/50">
-            <ShieldCheck size={14} />
-            Your data is encrypted and only visible to your property manager.
+          <div className="space-y-6">
+            <div className="max-w-md">
+              <h1 className="text-3xl font-bold leading-tight tracking-tight">
+                Create your admin<br />workspace in seconds.
+              </h1>
+              <p className="mt-4 text-white/60 text-sm leading-relaxed">
+                One account controls your entire portfolio — properties, units, tenants,
+                leases, rent collection, maintenance, and expenses.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 max-w-md">
+              {[
+                { n: "Properties", d: "Buildings & units" },
+                { n: "Tenants", d: "Profiles & scores" },
+                { n: "Leases", d: "PDF agreements" },
+                { n: "Finance", d: "Rent & expenses" }
+              ].map((c) => (
+                <div key={c.n} className="rounded-xl bg-white/5 border border-white/10 px-4 py-3">
+                  <div className="font-semibold text-sm">{c.n}</div>
+                  <div className="text-xs text-white/45 mt-0.5">{c.d}</div>
+                </div>
+              ))}
+            </div>
           </div>
+
+          <p className="text-xs text-white/35">© {new Date().getFullYear()} EstateHub · Admin portal</p>
         </div>
       </div>
 
-      {/* Form panel */}
+      {/* Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-sm">
-          <div className="lg:hidden flex items-center gap-2.5 mb-8 justify-center">
-            <div className="h-10 w-10 rounded-xl bg-resident-600 text-white grid place-items-center">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden flex items-center gap-2.5 mb-8">
+            <div className="h-10 w-10 rounded-xl bg-slate-900 grid place-items-center text-white">
               <Home size={18} />
             </div>
-            <span className="font-bold text-lg text-stone-900">EstateHub</span>
+            <div>
+              <div className="font-bold text-slate-900 dark:text-white">EstateHub</div>
+              <div className="text-xs text-slate-500">Property Management</div>
+            </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-stone-900">Activate resident access</h2>
-          <p className="mt-1.5 text-sm text-stone-500">
-            Ask your property manager first if you haven't already been added as a tenant.
-          </p>
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Create admin account</h2>
+            <p className="mt-1.5 text-sm text-stone-500 dark:text-stone-400">
+              Register as a property manager to start tracking your portfolio.
+            </p>
+          </div>
 
-          {error && (
-            <div className="mt-6 rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="rounded-xl bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
+                {error}
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Full name</label>
-              <div className="relative mt-1.5">
-                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+              <label className="label">Full name</label>
+              <div className="relative">
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                 <input
+                  className="input pl-9"
                   type="text"
+                  autoComplete="name"
+                  placeholder="Jane Smith"
+                  value={form.name}
+                  onChange={set("name")}
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Jane Doe"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-stone-200 bg-white text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-resident-300 focus:border-resident-400 transition"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Email address</label>
-              <div className="relative mt-1.5">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+              <label className="label">Work email</label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                 <input
+                  className="input pl-9"
                   type="email"
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  value={form.email}
+                  onChange={set("email")}
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-stone-200 bg-white text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-resident-300 focus:border-resident-400 transition"
                 />
               </div>
-              <p className="mt-1.5 text-[11px] text-stone-400">Use the email your property manager has on file for you.</p>
             </div>
 
             <div>
-              <label className="text-xs font-semibold uppercase tracking-wide text-stone-500">Password</label>
-              <div className="relative mt-1.5">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+              <label className="label">Password</label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
                 <input
+                  className="input pl-9 pr-10"
                   type={show ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="At least 6 characters"
+                  value={form.password}
+                  onChange={set("password")}
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter a strong password"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-stone-200 bg-white text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-resident-300 focus:border-resident-400 transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShow((s) => !s)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
                   tabIndex={-1}
                 >
                   {show ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+            </div>
 
-              {/* Password Requirements List */}
-              <div className="mt-3 space-y-1.5">
-                {passwordRules.map((rule, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-xs">
-                    {rule.valid ? (
-                      <Check size={14} className="text-emerald-600 shrink-0" />
-                    ) : (
-                      <X size={14} className="text-stone-300 shrink-0" />
-                    )}
-                    <span className={rule.valid ? "text-emerald-700 font-medium" : "text-stone-400"}>
-                      {rule.label}
-                    </span>
-                  </div>
-                ))}
+            <div>
+              <label className="label">Confirm password</label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                <input
+                  className="input pl-9"
+                  type={show ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Repeat password"
+                  value={form.confirm}
+                  onChange={set("confirm")}
+                  required
+                />
               </div>
+              <ul className="mt-2 space-y-1">
+                {passwordHints.map((h) => (
+                  <li key={h.label} className={`flex items-center gap-1.5 text-xs ${h.ok ? "text-emerald-600" : "text-slate-400"}`}>
+                    <CheckCircle2 size={12} /> {h.label}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <button
               type="submit"
-              disabled={loading || !isPasswordValid}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-resident-600 hover:bg-resident-700 active:bg-resident-800 text-white text-sm font-semibold py-2.5 mt-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
+              className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-brand-700 text-white hover:bg-brand-800 active:scale-[0.98] transition mt-1 disabled:opacity-60"
             >
-              {loading ? "Activating…" : (<>Activate account <ArrowRight size={15} /></>)}
+              {loading ? "Creating account…" : (
+                <>Create account <ArrowRight size={16} /></>
+              )}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-stone-500">
-            Already activated?{" "}
-            <Link to="/login" className="font-semibold text-resident-600 hover:text-resident-700">
+            Already have an account?{" "}
+            <Link to="/login" className="font-semibold text-stone-900 hover:text-black dark:text-white dark:hover:text-stone-200">
               Sign in
             </Link>
           </p>
