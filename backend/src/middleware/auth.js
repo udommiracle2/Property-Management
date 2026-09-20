@@ -40,13 +40,24 @@ export function adminOrSelfTenant(req, res, next) {
   next();
 }
 
-export function signToken(user) {
+/**
+ * Signs a session token scoped to ONE mode: either "admin" (this account
+ * managing its own properties) or "tenant" acting as one specific linked
+ * Tenant profile. A dual-capability account gets a fresh token each time
+ * it switches modes (see POST /api/auth/login's mode selection and
+ * POST /api/auth/switch-mode) — every existing role check in this file
+ * and every tenant-scoped route still just reads req.user.role/tenantId
+ * from this token, unchanged, since a token only ever represents one
+ * mode at a time.
+ */
+export function signToken(user, { mode, tenantId } = {}) {
+  const resolvedMode = mode || user.role || "admin";
   return jwt.sign(
     {
       id: user._id?.toString() || user.id,
       email: user.email,
-      role: user.role,
-      tenantId: user.tenantId || "",
+      role: resolvedMode,
+      tenantId: resolvedMode === "tenant" ? (tenantId || "") : "",
       name: user.name,
     },
     process.env.JWT_SECRET,

@@ -60,13 +60,13 @@ export default function TenantRegister() {
               className="w-full p-2 border rounded mt-1"
             />
           </div>
-          <button type="submit" className="w-full bg-slate-900 text-white py-2 rounded font-medium">
+          <button type="submit" className="w-full bg-resident-600 hover:bg-resident-700 text-white py-2 rounded font-medium transition">
             Activate Account
           </button>
         </form>
 
         <p className="text-sm text-center text-slate-600">
-          Already activated? <Link to="/login" className="text-blue-600 font-bold">Sign in</Link>
+          Already activated? <Link to="/login" className="text-resident-600 font-bold">Sign in</Link>
         </p>
       </div>
     </div>

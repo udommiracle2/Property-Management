@@ -98,14 +98,10 @@ export function createCrudHandlers(Model, options = {}) {
           payload.adminId = req.user.adminId || "tenant";
         }
 
-<<<<<<< HEAD
-        const existing = await Model.findOne({ id: payload.id });
-=======
         // Check for duplicate ID within this admin's own data only.
         // Two different admins are allowed to have documents with the same
         // id string — they live in separate silos.
         const existing = await Model.findOne({ id: payload.id, adminId: payload.adminId });
->>>>>>> 7e4e8ca (another commit)
         if (existing) return res.status(409).json({ error: "ID already exists" });
 
         const doc = await Model.create(payload);

@@ -197,7 +197,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-slate-900 text-white hover:bg-black active:scale-[0.98] transition mt-1 disabled:opacity-60"
+              className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-medium bg-brand-700 text-white hover:bg-brand-800 active:scale-[0.98] transition mt-1 disabled:opacity-60"
             >
               {loading ? "Creating account…" : (
                 <>Create account <ArrowRight size={16} /></>

@@ -5,17 +5,50 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Landlord palette (Space Indigo / Vintage Grape / Golden Pollen /
+        // Dark Cyan / Blue Slate). `brand` is the primary action ramp
+        // (anchored on Vintage Grape); the raw palette is also exposed as
+        // `landlord.*` for chrome/accents (sidebar bg, highlight badges).
         brand: {
-          50:  "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          800: "#3730a3",
-          900: "#312e81"
+          50:  "#f4f3f7",
+          100: "#e6e4eb",
+          200: "#c9c5d5",
+          300: "#a9a3bb",
+          400: "#7d7599",
+          500: "#4b3f72",
+          600: "#3f3560",
+          700: "#332b4e",
+          800: "#27213b",
+          900: "#1d182b"
+        },
+        landlord: {
+          indigo: "#1F2041",
+          grape:  "#4B3F72",
+          gold:   "#FFC857",
+          cyan:   "#119DA4",
+          slate:  "#19647E"
+        },
+        // Tenant palette (Honey Bronze / Amaranth / Stormy Teal / Baltic
+        // Blue / Yale Blue). `resident` is the primary action ramp
+        // (anchored on Amaranth); raw palette exposed as `tenant.*`.
+        resident: {
+          50:  "#fcf4f5",
+          100: "#f9e6e8",
+          200: "#f1c8ce",
+          300: "#e9a8b0",
+          400: "#de7c89",
+          500: "#d1495b",
+          600: "#b03d4c",
+          700: "#8e323e",
+          800: "#6d262f",
+          900: "#4f1c23"
+        },
+        tenant: {
+          bronze: "#EDAE49",
+          amaranth: "#D1495B",
+          teal:   "#00798C",
+          baltic: "#30638E",
+          yale:   "#003D5B"
         }
       },
       fontFamily: {

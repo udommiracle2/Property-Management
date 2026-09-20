@@ -1,6 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bell, CheckCircle2, CreditCard, FileText, Home, Mail, MessageSquare, Plus, Send, Wrench, CalendarDays, MapPin, AlertCircle, Clock3 } from "lucide-react";
+import jsPDF from "jspdf";
+import {
+  CheckCircle2, CreditCard, FileText, Home, MessageSquare, Plus, Send,
+  Wrench, CalendarDays, MapPin, AlertCircle, Download, Receipt
+} from "lucide-react";
 import Topbar from "../components/Topbar.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useStore } from "../context/StoreContext.jsx";
@@ -8,33 +12,375 @@ import { fmtDate, Pill, PriorityBadge, Modal } from "./_shared.jsx";
 import { useApp } from "../context/AppContext.jsx";
 
 function useResident() {
-  const { user } = useAuth(); const { state } = useStore();
+  const { user } = useAuth();
+  const { state } = useStore();
   return useMemo(() => {
     const tenant = state.tenants.find((t) => t.id === user?.tenantId || String(t.email || "").toLowerCase() === String(user?.email || "").toLowerCase());
     const unit = state.units.find((u) => u.id === tenant?.unitId);
     const property = state.properties.find((p) => p.id === unit?.propertyId);
     const lease = state.leases.find((l) => l.tenantId === tenant?.id && l.status !== "Past");
     const invoices = state.invoices.filter((i) => i.tenantId === tenant?.id).sort((a, b) => String(b.due).localeCompare(String(a.due)));
+    const invoiceIds = new Set(invoices.map((i) => i.id));
+    const payments = state.payments.filter((p) => invoiceIds.has(p.invoiceId));
     const tickets = state.maintenance.filter((m) => m.tenantId === tenant?.id);
     const messages = state.messages.filter((m) => m.tenantId === tenant?.id || String(m.from || "").toLowerCase() === String(tenant?.name || "").toLowerCase());
-    return { tenant, unit, property, lease, invoices, tickets, messages };
+    return { tenant, unit, property, lease, invoices, payments, tickets, messages };
   }, [state, user]);
 }
 
 const statusClass = (status) => status === "Paid" || status === "Resolved" ? "bg-emerald-100 text-emerald-700" : status === "Overdue" || status === "Open" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700";
 
-function EmptyResident() { return <main className="p-6"><div className="card max-w-xl mx-auto p-8 text-center"><AlertCircle className="mx-auto text-sky-500 mb-3" size={28} /><h2 className="font-bold text-lg">Your tenant profile is not ready</h2><p className="text-sm text-stone-500 mt-2">Ask your property manager to add your email address to your tenant profile, then sign in again.</p></div></main>; }
+function receiptFor(payments, invoiceId) {
+  return payments.find((p) => p.invoiceId === invoiceId);
+}
 
-function PaymentCard({ invoice }) { const { dispatch } = useStore(); const { fmt } = useApp(); if (!invoice) return null; const unpaid = invoice.status !== "Paid"; return <div className="card p-5 border-l-4 border-l-sky-500"><div className="flex justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-stone-500 font-bold">{unpaid ? "Balance due" : "Latest payment"}</p><p className="text-3xl font-bold mt-1">{fmt(invoice.total || invoice.amount)}</p><p className="text-xs text-stone-500 mt-1">Due {fmtDate(invoice.due)}</p></div><div className={`h-10 w-10 rounded-xl grid place-items-center ${unpaid ? "bg-sky-100 text-sky-600" : "bg-emerald-100 text-emerald-600"}`}>{unpaid ? <CreditCard size={20} /> : <CheckCircle2 size={20} />}</div></div>{unpaid && <button className="btn-primary mt-4 w-full justify-center bg-sky-600 hover:bg-sky-700" onClick={() => dispatch({ type: "MARK_INVOICE_PAID", payload: { id: invoice.id, method: "Tenant portal" } })}>Pay rent securely</button>}</div>; }
+// A receipt is only ever generated on the landlord's side (see
+// invoices.js POST /:id/pay) once they mark an invoice paid — this just
+// lays that record out as a downloadable PDF. There is no way for a
+// tenant to create or alter a receipt from here.
+function downloadReceiptPdf({ invoice, payment, resident, brandName = "EstateHub" }) {
+  const doc = new jsPDF({ unit: "pt", format: "letter" });
+  const left = 56;
+  let y = 64;
 
-function Overview({ resident }) { const { fmt } = useApp(); const due = resident.invoices.find((i) => i.status !== "Paid"); const open = resident.tickets.filter((t) => t.status !== "Resolved"); return <main className="p-4 md:p-6 space-y-6"><section className="rounded-3xl bg-gradient-to-br from-sky-600 to-cyan-500 text-white p-6 md:p-8 overflow-hidden relative"><div className="relative z-10 max-w-2xl"><p className="text-sky-100 text-sm">Welcome home, {resident.tenant.name.split(" ")[0]}.</p><h2 className="text-2xl md:text-3xl font-bold mt-1">Everything about your home, in one place.</h2><p className="mt-3 text-sm text-sky-50/85">Pay rent, track your lease, and get support from your property team.</p><div className="flex flex-wrap gap-3 mt-6"><Link className="btn bg-white text-sky-700 hover:bg-sky-50" to="/tenant/payments"><CreditCard size={16} />View payments</Link><Link className="btn border border-white/30 hover:bg-white/10" to="/tenant/maintenance"><Wrench size={16} />Request support</Link></div></div><Home className="absolute -right-4 -bottom-6 text-white/10" size={180} /></section><section className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card p-6"><div className="flex justify-between items-start"><div><p className="text-xs uppercase tracking-widest text-stone-500 font-bold">My home</p><h3 className="text-xl font-bold mt-1">{resident.property?.name || "Your residence"}</h3><p className="text-sm text-stone-500 mt-1 flex items-center gap-1"><MapPin size={14} />{resident.property?.address || "Address to be confirmed"}</p></div><Pill className="bg-sky-100 text-sky-700">Unit {resident.unit?.label || "—"}</Pill></div><div className="grid sm:grid-cols-3 gap-3 mt-6 pt-5 border-t border-stone-100"><div><p className="text-xs text-stone-500">Monthly rent</p><p className="font-bold mt-1">{fmt(resident.tenant.rent || resident.unit?.rent)}</p></div><div><p className="text-xs text-stone-500">Lease end</p><p className="font-bold mt-1">{fmtDate(resident.lease?.end)}</p></div><div><p className="text-xs text-stone-500">Open requests</p><p className="font-bold mt-1">{open.length}</p></div></div></div><PaymentCard invoice={due || resident.invoices[0]} /></section><section className="grid grid-cols-1 md:grid-cols-2 gap-6"><div className="card p-6"><div className="flex items-center justify-between"><h3 className="font-bold">Maintenance</h3><Link className="text-sm text-sky-600 font-semibold" to="/tenant/maintenance">View all</Link></div>{open.length ? <ul className="mt-4 space-y-3">{open.slice(0, 3).map((ticket) => <li key={ticket.id} className="flex items-center gap-3 rounded-xl bg-stone-50 p-3"><Wrench size={16} className="text-sky-600" /><div className="min-w-0 flex-1"><p className="text-sm font-semibold truncate">{ticket.title}</p><p className="text-xs text-stone-500">Updated {fmtDate(ticket.updated || ticket.created)}</p></div><Pill className={statusClass(ticket.status)}>{ticket.status}</Pill></li>)}</ul> : <p className="mt-4 text-sm text-stone-500">No active maintenance requests.</p>}</div><div className="card p-6"><div className="flex items-center justify-between"><h3 className="font-bold">Lease at a glance</h3><FileText size={18} className="text-stone-400" /></div><p className="text-sm text-stone-500 mt-4">Your current lease {resident.lease ? `runs from ${fmtDate(resident.lease.start)} to ${fmtDate(resident.lease.end)}.` : "has not been shared yet."}</p><Link to="/tenant/lease" className="inline-flex mt-4 text-sm text-sky-600 font-semibold">Review lease details →</Link></div></section></main>; }
+  doc.setFillColor(209, 73, 91); // Amaranth (tenant palette primary)
+  doc.rect(0, 0, 612, 80, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20); doc.setFont("helvetica", "bold");
+  doc.text("PAYMENT RECEIPT", left, 38);
+  doc.setFontSize(11); doc.setFont("helvetica", "normal");
+  doc.text(`Receipt No: ${payment.receiptNo || payment.id}  ·  Issued: ${fmtDate(payment.paidAt)}`, left, 60);
 
-function Payments({ resident }) { const { fmt } = useApp(); const due = resident.invoices.find((i) => i.status !== "Paid"); return <main className="p-4 md:p-6 space-y-6"><div className="grid lg:grid-cols-3 gap-6"><div className="lg:col-span-2 card overflow-hidden"><div className="p-6 border-b border-stone-100"><h2 className="font-bold text-lg">Payment activity</h2><p className="text-sm text-stone-500 mt-1">A record of your rent invoices and payments.</p></div>{resident.invoices.length ? <div className="overflow-x-auto"><table className="w-full"><thead><tr><th className="table-th">Due date</th><th className="table-th">Amount</th><th className="table-th">Status</th></tr></thead><tbody>{resident.invoices.map((invoice) => <tr key={invoice.id}><td className="table-td">{fmtDate(invoice.due)}</td><td className="table-td font-semibold">{fmt(invoice.total || invoice.amount)}</td><td className="table-td"><Pill className={statusClass(invoice.status)}>{invoice.status}</Pill></td></tr>)}</tbody></table></div> : <p className="p-6 text-sm text-stone-500">No invoices have been issued yet.</p>}</div><PaymentCard invoice={due} /></div></main>; }
+  doc.setTextColor(15, 23, 42);
+  y = 112;
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold"); doc.text("Property manager:", left, y);
+  doc.setFont("helvetica", "normal"); doc.text(`${brandName} Property Management`, left + 130, y);
+  y += 18;
+  doc.setFont("helvetica", "bold"); doc.text("Tenant:", left, y);
+  doc.setFont("helvetica", "normal"); doc.text(resident.tenant?.name || "—", left + 130, y);
+  y += 18;
+  doc.setFont("helvetica", "bold"); doc.text("Property / Unit:", left, y);
+  doc.setFont("helvetica", "normal"); doc.text(`${resident.property?.name || "—"} · ${resident.unit?.label || "—"}`, left + 130, y);
 
-function Maintenance({ resident }) { const { state, dispatch, nextId } = useStore(); const [open, setOpen] = useState(false); const [form, setForm] = useState({ title: "", priority: "Medium" }); const submit = (e) => { e.preventDefault(); const date = new Date().toISOString().slice(0, 10); dispatch({ type: "ADD_MAINT", payload: { id: nextId("M", state.maintenance), title: form.title, priority: form.priority, status: "Open", tenantId: resident.tenant.id, unitId: resident.unit?.id || "", created: date, updated: date } }); setOpen(false); setForm({ title: "", priority: "Medium" }); }; return <main className="p-4 md:p-6"><div className="flex items-start justify-between mb-6"><div><h2 className="text-xl font-bold">Maintenance requests</h2><p className="text-sm text-stone-500 mt-1">Tell us what needs attention in your home.</p></div><button className="btn-primary bg-sky-600 hover:bg-sky-700" onClick={() => setOpen(true)}><Plus size={16} />New request</button></div><div className="space-y-3">{resident.tickets.length ? resident.tickets.map((ticket) => <div className="card p-5 flex items-center gap-4" key={ticket.id}><div className="h-10 w-10 rounded-xl bg-sky-100 text-sky-600 grid place-items-center"><Wrench size={18} /></div><div className="flex-1 min-w-0"><p className="font-semibold">{ticket.title}</p><p className="text-xs text-stone-500 mt-1">Submitted {fmtDate(ticket.created)} · Last updated {fmtDate(ticket.updated)}</p></div><div className="text-right"><PriorityBadge p={ticket.priority} /><p className={`text-xs font-semibold mt-2 ${ticket.status === "Resolved" ? "text-emerald-600" : "text-amber-600"}`}>{ticket.status}</p></div></div>) : <div className="card p-12 text-center text-sm text-stone-500">No maintenance requests yet.</div>}</div><Modal open={open} onClose={() => setOpen(false)} title="New maintenance request"><form className="space-y-4" onSubmit={submit}><div><label className="label">What needs attention?</label><textarea className="input rounded-2xl min-h-28" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Describe the issue and where it is located" required /></div><div><label className="label">Priority</label><select className="input" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}><option>Low</option><option>Medium</option><option>High</option></select></div><div className="flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="btn-ghost">Cancel</button><button className="btn-primary bg-sky-600 hover:bg-sky-700">Send request</button></div></form></Modal></main>; }
+  y += 30;
+  doc.setDrawColor(226, 232, 240); doc.line(left, y, 612 - left, y);
 
-function Messages({ resident }) { const { state, dispatch, nextId } = useStore(); const [text, setText] = useState(""); const send = (e) => { e.preventDefault(); if (!text.trim()) return; const now = new Date().toISOString(); dispatch({ type: "ADD_MESSAGE", payload: { id: nextId("MSG", state.messages), from: resident.tenant.name, tenantId: resident.tenant.id, subject: "Message from tenant portal", preview: text.trim(), time: now, unread: true, thread: [{ from: resident.tenant.name, text: text.trim(), at: now }] } }); setText(""); }; return <main className="p-4 md:p-6 max-w-4xl"><div className="mb-6"><h2 className="text-xl font-bold">Messages</h2><p className="text-sm text-stone-500 mt-1">Contact your property manager. We’ll keep your conversation here.</p></div><div className="card overflow-hidden"><div className="p-5 border-b border-stone-100 flex items-center gap-3"><div className="h-10 w-10 rounded-full bg-sky-100 text-sky-600 grid place-items-center"><MessageSquare size={18} /></div><div><p className="font-semibold">Property management</p><p className="text-xs text-emerald-600">Typically responds within one business day</p></div></div><div className="p-5 space-y-3 min-h-64 bg-stone-50/60">{resident.messages.length ? resident.messages.flatMap((message) => message.thread?.length ? message.thread : [{ from: message.from, text: message.preview, at: message.time }]).map((m, index) => <div key={index} className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${m.from === resident.tenant.name ? "ml-auto bg-sky-600 text-white" : "bg-white border border-stone-100 text-stone-700"}`}><p>{m.text}</p><p className={`text-[10px] mt-1 ${m.from === resident.tenant.name ? "text-sky-100" : "text-stone-400"}`}>{m.from} · {fmtDate(m.at || m.time)}</p></div>) : <div className="text-sm text-stone-500 text-center pt-20">Start a conversation with your property team.</div>}</div><form onSubmit={send} className="p-4 flex gap-3 border-t border-stone-100"><input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message…" /><button className="btn-primary bg-sky-600 hover:bg-sky-700" title="Send message"><Send size={16} /></button></form></div></main>; }
+  y += 26;
+  doc.setFontSize(13); doc.setFont("helvetica", "bold"); doc.text("Payment details", left, y);
+  y += 18;
+  doc.setFontSize(11); doc.setFont("helvetica", "normal");
+  doc.text(`Invoice:        ${invoice.id}`, left, y); y += 16;
+  doc.text(`Amount paid:    $${(payment.amount || 0).toLocaleString()}`, left, y); y += 16;
+  doc.text(`Method:         ${payment.method || "Not specified"}`, left, y); y += 16;
+  doc.text(`Paid on:        ${fmtDate(payment.paidAt)}`, left, y); y += 16;
+  if (payment.note) { doc.text(`Note:           ${payment.note}`, left, y); y += 16; }
 
-function Lease({ resident }) { const { fmt } = useApp(); const lease = resident.lease; return <main className="p-4 md:p-6 max-w-4xl"><div className="mb-6"><h2 className="text-xl font-bold">My lease</h2><p className="text-sm text-stone-500 mt-1">The key details of your current tenancy agreement.</p></div>{lease ? <div className="card overflow-hidden"><div className="p-6 bg-stone-950 text-white"><p className="text-xs uppercase tracking-widest text-stone-400">Current lease</p><h3 className="text-2xl font-bold mt-2">{resident.property?.name} · {resident.unit?.label}</h3><p className="text-sm text-stone-400 mt-2">Lease {lease.id}</p></div><div className="p-6 grid sm:grid-cols-2 gap-6"><div className="flex gap-3"><CalendarDays className="text-sky-600" /><div><p className="text-xs text-stone-500">Lease term</p><p className="font-semibold mt-1">{fmtDate(lease.start)} — {fmtDate(lease.end)}</p></div></div><div className="flex gap-3"><CreditCard className="text-sky-600" /><div><p className="text-xs text-stone-500">Monthly rent</p><p className="font-semibold mt-1">{fmt(lease.rent || resident.tenant.rent)}</p></div></div><div className="flex gap-3"><CheckCircle2 className="text-sky-600" /><div><p className="text-xs text-stone-500">Security deposit</p><p className="font-semibold mt-1">{fmt(lease.deposit)}</p></div></div><div className="flex gap-3"><FileText className="text-sky-600" /><div><p className="text-xs text-stone-500">Lease status</p><p className="font-semibold mt-1">{lease.status}</p></div></div></div></div> : <div className="card p-12 text-center text-sm text-stone-500">Your lease has not been shared yet. Contact your property manager if you need a copy.</div>}</main>; }
+  y += 24;
+  doc.setDrawColor(226, 232, 240); doc.line(left, y, 612 - left, y);
+  y += 24;
+  doc.setFontSize(9); doc.setTextColor(120, 113, 108);
+  doc.text("This receipt was generated by your property manager and reflects a payment already recorded", left, y);
+  y += 12;
+  doc.text("against your account. Keep it for your records.", left, y);
 
-export default function TenantPortal() { const location = useLocation(); const resident = useResident(); const page = location.pathname.split("/")[2] || "home"; const titles = { home: ["Home", "A simple view of your home and what needs your attention."], payments: ["Payments", "Review your rent and payment history."], maintenance: ["Maintenance", "Request help and follow progress."], messages: ["Messages", "Stay connected with your property team."], lease: ["My lease", "Your tenancy agreement at a glance."] }; if (!resident.tenant) return <><Topbar title="Resident portal" subtitle="Your home, made simple." /><EmptyResident /></>; const [title, subtitle] = titles[page] || titles.home; return <><Topbar title={title} subtitle={subtitle} />{page === "payments" ? <Payments resident={resident} /> : page === "maintenance" ? <Maintenance resident={resident} /> : page === "messages" ? <Messages resident={resident} /> : page === "lease" ? <Lease resident={resident} /> : <Overview resident={resident} />}</>; }
+  doc.save(`Receipt-${payment.receiptNo || invoice.id}.pdf`);
+}
+
+function EmptyResident() {
+  return (
+    <main className="p-6">
+      <div className="card max-w-xl mx-auto p-8 text-center">
+        <AlertCircle className="mx-auto text-resident-500 mb-3" size={28} />
+        <h2 className="font-bold text-lg">Your tenant profile is not ready</h2>
+        <p className="text-sm text-stone-500 mt-2">Ask your property manager to add your email address to your tenant profile, then sign in again.</p>
+      </div>
+    </main>
+  );
+}
+
+// Read-only balance summary — no payment button. Tenants can see what's
+// due and when, and download a receipt once the landlord has recorded a
+// payment, but can't mark anything paid themselves.
+function BalanceCard({ invoice, payment, resident }) {
+  const { fmt } = useApp();
+  if (!invoice) return null;
+  const unpaid = invoice.status !== "Paid";
+  return (
+    <div className="card p-5 border-l-4 border-l-resident-500">
+      <div className="flex justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-widest text-stone-500 font-bold">{unpaid ? "Balance due" : "Latest payment"}</p>
+          <p className="text-3xl font-bold mt-1">{fmt(invoice.total || invoice.amount)}</p>
+          <p className="text-xs text-stone-500 mt-1">{unpaid ? `Due ${fmtDate(invoice.due)}` : `Paid ${fmtDate(payment?.paidAt || invoice.paid)}`}</p>
+        </div>
+        <div className={`h-10 w-10 rounded-xl grid place-items-center ${unpaid ? "bg-resident-100 text-resident-600" : "bg-emerald-100 text-emerald-600"}`}>
+          {unpaid ? <CreditCard size={20} /> : <CheckCircle2 size={20} />}
+        </div>
+      </div>
+      {unpaid ? (
+        <p className="mt-4 text-xs text-stone-500 bg-stone-50 rounded-xl p-3">
+          Rent is collected by your property manager outside the portal. Reach out via Messages if you have questions about this balance.
+        </p>
+      ) : payment ? (
+        <button
+          className="btn-primary mt-4 w-full justify-center bg-resident-600 hover:bg-resident-700"
+          onClick={() => downloadReceiptPdf({ invoice, payment, resident })}
+        >
+          <Download size={16} /> Download receipt
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function Overview({ resident }) {
+  const { fmt } = useApp();
+  const due = resident.invoices.find((i) => i.status !== "Paid");
+  const latest = due || resident.invoices[0];
+  const payment = latest ? receiptFor(resident.payments, latest.id) : null;
+  const open = resident.tickets.filter((t) => t.status !== "Resolved");
+  return (
+    <main className="p-4 md:p-6 space-y-6">
+      <section className="rounded-3xl bg-gradient-to-br from-resident-600 to-tenant-bronze text-white p-6 md:p-8 overflow-hidden relative">
+        <div className="relative z-10 max-w-2xl">
+          <p className="text-resident-100 text-sm">Welcome home, {resident.tenant.name.split(" ")[0]}.</p>
+          <h2 className="text-2xl md:text-3xl font-bold mt-1">Everything about your home, in one place.</h2>
+          <p className="mt-3 text-sm text-resident-50/85">Track your rent, lease, and get support from your property team.</p>
+          <div className="flex flex-wrap gap-3 mt-6">
+            <Link className="btn bg-white text-resident-700 hover:bg-resident-50" to="/tenant/payments"><Receipt size={16} />View invoices & receipts</Link>
+            <Link className="btn border border-white/30 hover:bg-white/10" to="/tenant/maintenance"><Wrench size={16} />Request support</Link>
+          </div>
+        </div>
+        <Home className="absolute -right-4 -bottom-6 text-white/10" size={180} />
+      </section>
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 card p-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-stone-500 font-bold">My home</p>
+              <h3 className="text-xl font-bold mt-1">{resident.property?.name || "Your residence"}</h3>
+              <p className="text-sm text-stone-500 mt-1 flex items-center gap-1"><MapPin size={14} />{resident.property?.address || "Address to be confirmed"}</p>
+            </div>
+            <Pill className="bg-resident-100 text-resident-700">Unit {resident.unit?.label || "—"}</Pill>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-3 mt-6 pt-5 border-t border-stone-100">
+            <div><p className="text-xs text-stone-500">Monthly rent</p><p className="font-bold mt-1">{fmt(resident.tenant.rent || resident.unit?.rent)}</p></div>
+            <div><p className="text-xs text-stone-500">Lease end</p><p className="font-bold mt-1">{fmtDate(resident.lease?.end)}</p></div>
+            <div><p className="text-xs text-stone-500">Open requests</p><p className="font-bold mt-1">{open.length}</p></div>
+          </div>
+        </div>
+        <BalanceCard invoice={latest} payment={payment} resident={resident} />
+      </section>
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="card p-6">
+          <div className="flex items-center justify-between"><h3 className="font-bold">Maintenance</h3><Link className="text-sm text-resident-600 font-semibold" to="/tenant/maintenance">View all</Link></div>
+          {open.length ? (
+            <ul className="mt-4 space-y-3">
+              {open.slice(0, 3).map((ticket) => (
+                <li key={ticket.id} className="flex items-center gap-3 rounded-xl bg-stone-50 p-3">
+                  <Wrench size={16} className="text-resident-600" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold truncate">{ticket.title}</p>
+                    <p className="text-xs text-stone-500">Updated {fmtDate(ticket.updated || ticket.created)}</p>
+                  </div>
+                  <Pill className={statusClass(ticket.status)}>{ticket.status}</Pill>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="mt-4 text-sm text-stone-500">No active maintenance requests.</p>}
+        </div>
+        <div className="card p-6">
+          <div className="flex items-center justify-between"><h3 className="font-bold">Lease at a glance</h3><FileText size={18} className="text-stone-400" /></div>
+          <p className="text-sm text-stone-500 mt-4">Your current lease {resident.lease ? `runs from ${fmtDate(resident.lease.start)} to ${fmtDate(resident.lease.end)}.` : "has not been shared yet."}</p>
+          <Link to="/tenant/lease" className="inline-flex mt-4 text-sm text-resident-600 font-semibold">Review lease details →</Link>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function Payments({ resident }) {
+  const { fmt } = useApp();
+  const due = resident.invoices.find((i) => i.status !== "Paid");
+  const balancePayment = due ? receiptFor(resident.payments, due.id) : null;
+  return (
+    <main className="p-4 md:p-6 space-y-6">
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 card overflow-hidden">
+          <div className="p-6 border-b border-stone-100">
+            <h2 className="font-bold text-lg">Invoices & receipts</h2>
+            <p className="text-sm text-stone-500 mt-1">A record of your rent invoices and the receipts your property manager has issued.</p>
+          </div>
+          {resident.invoices.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr>
+                    <th className="table-th">Due date</th>
+                    <th className="table-th">Amount</th>
+                    <th className="table-th">Status</th>
+                    <th className="table-th">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resident.invoices.map((invoice) => {
+                    const payment = receiptFor(resident.payments, invoice.id);
+                    return (
+                      <tr key={invoice.id}>
+                        <td className="table-td">{fmtDate(invoice.due)}</td>
+                        <td className="table-td font-semibold">{fmt(invoice.total || invoice.amount)}</td>
+                        <td className="table-td"><Pill className={statusClass(invoice.status)}>{invoice.status}</Pill></td>
+                        <td className="table-td">
+                          {payment ? (
+                            <button
+                              onClick={() => downloadReceiptPdf({ invoice, payment, resident })}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-resident-700 hover:text-resident-800"
+                            >
+                              <Download size={13} /> {payment.receiptNo || "Download"}
+                            </button>
+                          ) : (
+                            <span className="text-xs text-stone-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="p-6 text-sm text-stone-500">No invoices have been issued yet.</p>}
+        </div>
+        <BalanceCard invoice={due} payment={balancePayment} resident={resident} />
+      </div>
+    </main>
+  );
+}
+
+function Maintenance({ resident }) {
+  const { state, dispatch, nextId } = useStore();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ title: "", priority: "Medium" });
+  const submit = (e) => {
+    e.preventDefault();
+    const date = new Date().toISOString().slice(0, 10);
+    dispatch({ type: "ADD_MAINT", payload: { id: nextId("M", state.maintenance), title: form.title, priority: form.priority, status: "Open", tenantId: resident.tenant.id, unitId: resident.unit?.id || "", created: date, updated: date } });
+    setOpen(false);
+    setForm({ title: "", priority: "Medium" });
+  };
+  return (
+    <main className="p-4 md:p-6">
+      <div className="flex items-start justify-between mb-6">
+        <div><h2 className="text-xl font-bold">Maintenance requests</h2><p className="text-sm text-stone-500 mt-1">Tell us what needs attention in your home.</p></div>
+        <button className="btn-primary bg-resident-600 hover:bg-resident-700" onClick={() => setOpen(true)}><Plus size={16} />New request</button>
+      </div>
+      <div className="space-y-3">
+        {resident.tickets.length ? resident.tickets.map((ticket) => (
+          <div className="card p-5 flex items-center gap-4" key={ticket.id}>
+            <div className="h-10 w-10 rounded-xl bg-resident-100 text-resident-600 grid place-items-center"><Wrench size={18} /></div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold">{ticket.title}</p>
+              <p className="text-xs text-stone-500 mt-1">Submitted {fmtDate(ticket.created)} · Last updated {fmtDate(ticket.updated)}</p>
+            </div>
+            <div className="text-right">
+              <PriorityBadge p={ticket.priority} />
+              <p className={`text-xs font-semibold mt-2 ${ticket.status === "Resolved" ? "text-emerald-600" : "text-amber-600"}`}>{ticket.status}</p>
+            </div>
+          </div>
+        )) : <div className="card p-12 text-center text-sm text-stone-500">No maintenance requests yet.</div>}
+      </div>
+      <Modal open={open} onClose={() => setOpen(false)} title="New maintenance request">
+        <form className="space-y-4" onSubmit={submit}>
+          <div><label className="label">What needs attention?</label><textarea className="input rounded-2xl min-h-28" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Describe the issue and where it is located" required /></div>
+          <div><label className="label">Priority</label><select className="input" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}><option>Low</option><option>Medium</option><option>High</option></select></div>
+          <div className="flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="btn-ghost">Cancel</button><button className="btn-primary bg-resident-600 hover:bg-resident-700">Send request</button></div>
+        </form>
+      </Modal>
+    </main>
+  );
+}
+
+function Messages({ resident }) {
+  const { state, dispatch, nextId } = useStore();
+  const [text, setText] = useState("");
+  const send = (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    const now = new Date().toISOString();
+    dispatch({ type: "ADD_MESSAGE", payload: { id: nextId("MSG", state.messages), from: resident.tenant.name, tenantId: resident.tenant.id, subject: "Message from tenant portal", preview: text.trim(), time: now, unread: true, thread: [{ from: resident.tenant.name, text: text.trim(), at: now }] } });
+    setText("");
+  };
+  return (
+    <main className="p-4 md:p-6 max-w-4xl">
+      <div className="mb-6"><h2 className="text-xl font-bold">Messages</h2><p className="text-sm text-stone-500 mt-1">Contact your property manager. We’ll keep your conversation here.</p></div>
+      <div className="card overflow-hidden">
+        <div className="p-5 border-b border-stone-100 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-resident-100 text-resident-600 grid place-items-center"><MessageSquare size={18} /></div>
+          <div><p className="font-semibold">Property management</p><p className="text-xs text-emerald-600">Typically responds within one business day</p></div>
+        </div>
+        <div className="p-5 space-y-3 min-h-64 bg-stone-50/60">
+          {resident.messages.length ? resident.messages.flatMap((message) => message.thread?.length ? message.thread : [{ from: message.from, text: message.preview, at: message.time }]).map((m, index) => (
+            <div key={index} className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${m.from === resident.tenant.name ? "ml-auto bg-resident-600 text-white" : "bg-white border border-stone-100 text-stone-700"}`}>
+              <p>{m.text}</p>
+              <p className={`text-[10px] mt-1 ${m.from === resident.tenant.name ? "text-resident-100" : "text-stone-400"}`}>{m.from} · {fmtDate(m.at || m.time)}</p>
+            </div>
+          )) : <div className="text-sm text-stone-500 text-center pt-20">Start a conversation with your property team.</div>}
+        </div>
+        <form onSubmit={send} className="p-4 flex gap-3 border-t border-stone-100">
+          <input className="input" value={text} onChange={(e) => setText(e.target.value)} placeholder="Write a message…" />
+          <button className="btn-primary bg-resident-600 hover:bg-resident-700" title="Send message"><Send size={16} /></button>
+        </form>
+      </div>
+    </main>
+  );
+}
+
+function Lease({ resident }) {
+  const { fmt } = useApp();
+  const lease = resident.lease;
+  return (
+    <main className="p-4 md:p-6 max-w-4xl">
+      <div className="mb-6"><h2 className="text-xl font-bold">My lease</h2><p className="text-sm text-stone-500 mt-1">The key details of your current tenancy agreement.</p></div>
+      {lease ? (
+        <div className="card overflow-hidden">
+          <div className="p-6 bg-stone-950 text-white">
+            <p className="text-xs uppercase tracking-widest text-stone-400">Current lease</p>
+            <h3 className="text-2xl font-bold mt-2">{resident.property?.name} · {resident.unit?.label}</h3>
+            <p className="text-sm text-stone-400 mt-2">Lease {lease.id}</p>
+          </div>
+          <div className="p-6 grid sm:grid-cols-2 gap-6">
+            <div className="flex gap-3"><CalendarDays className="text-resident-600" /><div><p className="text-xs text-stone-500">Lease term</p><p className="font-semibold mt-1">{fmtDate(lease.start)} — {fmtDate(lease.end)}</p></div></div>
+            <div className="flex gap-3"><CreditCard className="text-resident-600" /><div><p className="text-xs text-stone-500">Monthly rent</p><p className="font-semibold mt-1">{fmt(lease.rent || resident.tenant.rent)}</p></div></div>
+            <div className="flex gap-3"><CheckCircle2 className="text-resident-600" /><div><p className="text-xs text-stone-500">Security deposit</p><p className="font-semibold mt-1">{fmt(lease.deposit)}</p></div></div>
+            <div className="flex gap-3"><FileText className="text-resident-600" /><div><p className="text-xs text-stone-500">Lease status</p><p className="font-semibold mt-1">{lease.status}</p></div></div>
+          </div>
+        </div>
+      ) : <div className="card p-12 text-center text-sm text-stone-500">Your lease has not been shared yet. Contact your property manager if you need a copy.</div>}
+    </main>
+  );
+}
+
+export default function TenantPortal() {
+  const location = useLocation();
+  const resident = useResident();
+  const page = location.pathname.split("/")[2] || "home";
+  const titles = {
+    home: ["Home", "A simple view of your home and what needs your attention."],
+    payments: ["Invoices & Receipts", "Review your rent invoices and download receipts."],
+    maintenance: ["Maintenance", "Request help and follow progress."],
+    messages: ["Messages", "Stay connected with your property team."],
+    lease: ["My lease", "Your tenancy agreement at a glance."]
+  };
+  if (!resident.tenant) return <><Topbar title="Resident portal" subtitle="Your home, made simple." /><EmptyResident /></>;
+  const [title, subtitle] = titles[page] || titles.home;
+  return (
+    <>
+      <Topbar title={title} subtitle={subtitle} />
+      {page === "payments" ? <Payments resident={resident} />
+        : page === "maintenance" ? <Maintenance resident={resident} />
+        : page === "messages" ? <Messages resident={resident} />
+        : page === "lease" ? <Lease resident={resident} />
+        : <Overview resident={resident} />}
+    </>
+  );
+}

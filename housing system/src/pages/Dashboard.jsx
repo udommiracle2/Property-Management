@@ -74,7 +74,7 @@ export default function Dashboard() {
       <main className="p-6 space-y-8">
         {/* Getting started */}
         {!hasData && (
-          <section className="card p-8 border-stone-200 dark:border-stone-800 bg-gradient-to-br from-[F4FFF8] to-white dark:from-[#1C3738]/40 dark:to-[#1C3738]">
+          <section className="card p-8 border-stone-200 dark:border-stone-800 bg-gradient-to-br from-brand-50 to-white dark:from-[#1F2041]/40 dark:to-[#1F2041]">
             <div className="flex flex-col md:flex-row md:items-start gap-8">
               <div className="flex-1">
                 <h2 className="text-xl font-bold text-[#1C3738] dark:text-white mb-2">Get started with EstateHub</h2>

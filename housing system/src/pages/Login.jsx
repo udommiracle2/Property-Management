@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, Home } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, Home, Building2, DoorOpen } from "lucide-react";
 
 export default function Login() {
   const { login } = useAuth();
@@ -11,40 +11,41 @@ export default function Login() {
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  // When an account can sign in as more than one thing, login() returns
+  // { needsModeSelection: true, modes }. We stash that here and show a
+  // picker instead of navigating, then re-submit login() with the chosen
+  // mode once they pick.
+  const [modeChoice, setModeChoice] = useState(null);
 
-  // async function handleSubmit(e) {
-  //   e.preventDefault();
-  //   setError("");
-  //   setLoading(true);
-
-  //   const res = await login({ email, password });
-  //   setLoading(false);
-
-  //   if (res.ok) {
-  //     navigate(res.role === "tenant" ? "/tenant" : "/", { replace: true });
-  //   } else {
-  //     setError(res.error);
-  //   }
-  // }
-
+  async function completeLogin(mode, tenantId) {
+    setError("");
+    setLoading(true);
+    try {
+      const data = await login(email, password, mode, tenantId);
+      navigate(data.user.role === "tenant" ? "/tenant" : "/");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      // Call login from AuthContext
       const data = await login(email, password);
 
-      // Route based on user role returned from Express
-      if (data.user.role === "tenant") {
-        navigate("/tenant"); // Sends tenants to Tenant Portal
-      } else {
-        navigate("/"); // Sends landlords/admins to Landlord Dashboard
+      if (data.needsModeSelection) {
+        setModeChoice(data.modes);
+        setLoading(false);
+        return;
       }
+
+      navigate(data.user.role === "tenant" ? "/tenant" : "/");
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -90,7 +91,7 @@ export default function Login() {
                 "Log maintenance tickets and operating costs"
               ].map((t) => (
                 <li key={t} className="flex items-start gap-2.5">
-                  <ShieldCheck size={16} className="mt-0.5 shrink-0 text-sky-400" />
+                  <ShieldCheck size={16} className="mt-0.5 shrink-0 text-landlord-cyan" />
                   <span>{t}</span>
                 </li>
               ))}
@@ -115,12 +116,68 @@ export default function Login() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-stone-900 dark:text-white">Welcome back</h2>
+            <h2 className="text-2xl font-bold text-stone-900 dark:text-white">
+              {modeChoice ? "How would you like to continue?" : "Welcome back"}
+            </h2>
             <p className="mt-1.5 text-sm text-stone-500 dark:text-stone-400">
-              Sign in to your EstateHub account.
+              {modeChoice ? "This account is linked to more than one option." : "Sign in to your EstateHub account."}
             </p>
           </div>
 
+          {modeChoice ? (
+            <div className="space-y-3">
+              {error && (
+                <div className="rounded-xl bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => completeLogin("admin")}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-slate-900 dark:hover:border-white text-left transition disabled:opacity-60"
+              >
+                <div className="h-10 w-10 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 grid place-items-center shrink-0">
+                  <Building2 size={18} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-stone-900 dark:text-white">My properties</div>
+                  <div className="text-xs text-stone-500">Landlord dashboard</div>
+                </div>
+                <ArrowRight size={16} className="text-stone-400" />
+              </button>
+
+              {modeChoice.tenants.map((t) => (
+                <button
+                  key={t.tenantId}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => completeLogin("tenant", t.tenantId)}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl border border-stone-200 dark:border-stone-800 hover:border-resident-600 text-left transition disabled:opacity-60"
+                >
+                  <div className="h-10 w-10 rounded-lg bg-resident-600 text-white grid place-items-center shrink-0">
+                    <DoorOpen size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-stone-900 dark:text-white truncate">
+                      {t.propertyName || "Tenant profile"}{t.unitLabel ? ` — ${t.unitLabel}` : ""}
+                    </div>
+                    <div className="text-xs text-stone-500">Tenant portal</div>
+                  </div>
+                  <ArrowRight size={16} className="text-stone-400" />
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setModeChoice(null)}
+                className="text-xs text-stone-400 hover:text-stone-600 mt-2"
+              >
+                ← Use a different account
+              </button>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="rounded-xl bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-800 px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
@@ -178,7 +235,10 @@ export default function Login() {
               )}
             </button>
           </form>
+          )}
 
+          {!modeChoice && (
+          <>
           <p className="mt-6 text-center text-sm text-stone-500">
             New to EstateHub?{" "}
             <Link to="/register" className="font-semibold text-stone-900 hover:text-black dark:text-white dark:hover:text-stone-200">
@@ -187,12 +247,14 @@ export default function Login() {
           </p>
 
           <p className="mt-3 text-center text-sm text-stone-500">
-            Are you a tenant? <Link to="/tenant-register" className="font-semibold text-sky-700 hover:text-sky-800">Activate resident access</Link>
+            Are you a tenant? <Link to="/tenant-register" className="font-semibold text-resident-700 hover:text-resident-800">Activate resident access</Link>
           </p>
 
           <div className="mt-8 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900/50 p-4 text-xs text-stone-500 dark:text-stone-400">
             <strong className="text-stone-700 dark:text-stone-300">Live Database Connected:</strong> Accounts registered here are sent to your Express API and saved directly in MongoDB.
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>

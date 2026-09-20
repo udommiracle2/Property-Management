@@ -9,6 +9,7 @@ import { useApp, CURRENCIES } from "../context/AppContext.jsx";
 import { useStore } from "../context/StoreContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import DeleteAccountModal from "./DeleteAccountModal.jsx";
+import ModeSwitcher from "./ModeSwitcher.jsx";
 
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -36,7 +37,7 @@ function NavList({ onNavigate }) {
             onClick={onNavigate}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${isActive
-                ? "bg-stone-800 text-white shadow-inner"
+                ? "bg-brand-600 text-white shadow-inner"
                 : "text-stone-400 hover:bg-stone-800/50 hover:text-stone-200"
               }`
             }
@@ -111,8 +112,8 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden md:flex md:w-52 lg:w-72 shrink-0 flex-col bg-[#1C3738] text-white border-r border-stone-800">
-        <div className="h-20 flex items-center gap-3 px-6 border-b border-stone-800 bg-[#1C3738]/50 backdrop-blur-md sticky top-0 z-10">
+      <aside className="hidden md:flex md:w-52 lg:w-72 shrink-0 flex-col bg-[#1F2041] text-white border-r border-stone-800">
+        <div className="h-20 flex items-center gap-3 px-6 border-b border-stone-800 bg-[#1F2041]/50 backdrop-blur-md sticky top-0 z-10">
           <div className="h-10 w-10 rounded-2xl bg-stone-800 border border-stone-700 grid place-items-center shadow-sm">
             <Building2 size={20} className="text-stone-200" />
           </div>
@@ -123,7 +124,7 @@ export default function Sidebar() {
 
         <NavList />
 
-        <div className="px-3 py-3 border-t border-stone-800 space-y-1 bg-[#1C3738]/50">
+        <div className="px-3 py-3 border-t border-stone-800 space-y-1 bg-[#1F2041]/50">
           {user && (
             <div className="flex items-center gap-3 px-3 py-2.5 mb-1 rounded-xl bg-stone-900/50 border border-stone-800">
               <div className="h-9 w-9 rounded-full bg-stone-700 border border-stone-600 grid place-items-center text-stone-200 text-xs font-bold shrink-0">
@@ -136,6 +137,7 @@ export default function Sidebar() {
             </div>
           )}
           <CurrencySwitcher />
+          <ModeSwitcher />
           <button onClick={reset} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-400 hover:bg-stone-800 hover:text-stone-200 transition">
             <RefreshCw size={18} /> Clear portfolio data
           </button>
@@ -151,8 +153,8 @@ export default function Sidebar() {
       {/* Mobile drawer */}
       {mobileNavOpen && (
         <div className="md:hidden fixed inset-0 z-40">
-          <div className="absolute inset-0 bg-[#1C3738]/60 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
-          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-[#1C3738] text-white flex flex-col animate-slide-up border-r border-stone-800">
+          <div className="absolute inset-0 bg-[#1F2041]/60 backdrop-blur-sm" onClick={() => setMobileNavOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-72 bg-[#1F2041] text-white flex flex-col animate-slide-up border-r border-stone-800">
             <div className="h-16 flex items-center justify-between px-5 border-b border-stone-800">
               <div className="flex items-center gap-2">
                 <div className="h-9 w-9 rounded-xl bg-stone-800 border border-stone-700 grid place-items-center">
@@ -165,7 +167,7 @@ export default function Sidebar() {
               </button>
             </div>
             <NavList onNavigate={() => setMobileNavOpen(false)} />
-            <div className="px-3 py-3 border-t border-stone-800 space-y-1 bg-[#1C3738]/50">
+            <div className="px-3 py-3 border-t border-stone-800 space-y-1 bg-[#1F2041]/50">
               {user && (
                 <div className="flex items-center gap-3 px-3 py-2.5">
                   <div className="h-9 w-9 rounded-full bg-stone-700 border border-stone-600 grid place-items-center text-stone-200 text-xs font-bold">
@@ -178,6 +180,7 @@ export default function Sidebar() {
                 </div>
               )}
               <CurrencySwitcher />
+              <ModeSwitcher />
               <button onClick={signOut} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-rose-400 hover:bg-rose-500/10">
                 <LogOut size={18} /> Sign out
               </button>
