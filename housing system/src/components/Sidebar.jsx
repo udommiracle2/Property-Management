@@ -111,7 +111,7 @@ export default function Sidebar() {
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden md:flex md:w-64 lg:w-72 shrink-0 flex-col bg-[#1C3738] text-white border-r border-stone-800">
+      <aside className="hidden lg:w-72 shrink-0 flex-col bg-[#1C3738] text-white border-r border-stone-800">
         <div className="h-20 flex items-center gap-3 px-6 border-b border-stone-800 bg-[#1C3738]/50 backdrop-blur-md sticky top-0 z-10">
           <div className="h-10 w-10 rounded-2xl bg-stone-800 border border-stone-700 grid place-items-center shadow-sm">
             <Building2 size={20} className="text-stone-200" />
